@@ -1,0 +1,32 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+import SectionHead from '../../components/SectionHead.astro';
+import QuizSection from '../../components/QuizSection.astro';
+import FinalCta from '../../components/FinalCta.astro';
+import ContactCard from '../../components/ContactCard.astro';
+import Catalog from '../../islands/Catalog';
+import { products, toCard, allChips } from '../../lib/catalog';
+
+const all = products.filter((p) => p.price && p.images.length).map(toCard);
+const min = Math.min(...all.map((p) => p.price));
+const heroImg = (products.find((p) => p.title.startsWith('Букет из 151 метровой'))?.images[0] ?? '') + '-1000.webp';
+---
+<Base title="Каталог цветов и букетов с доставкой по Новосибирску – Elite Rose" description={`Каталог Elite Rose: ${all.length} букетов из роз, хризантем и гортензий от ${min.toLocaleString('ru-RU')} ₽ с доставкой по Новосибирску. Фото перед доставкой.`}>
+  <PageHero
+    small
+    crumbs={[{ label: 'Главная', href: '/' }, { label: 'Каталог' }]}
+    title="Каталог цветов и букетов Elite Rose в Новосибирске"
+    text={`Выберите готовый букет с доставкой по Новосибирску: розы от 60 до 100 см, кустовые розы, хризантемы, гортензии, корзины и свадебные букеты. Перед доставкой пришлём фото готового заказа на согласование.`}
+    image={heroImg}
+    buttons={[{ label: 'Смотреть букеты', href: '/catalog#list' }, { label: 'Помогите выбрать', href: '/catalog#Quiz' }]}
+    features={false}
+  />
+  <section class="section container" id="list">
+    <SectionHead title="Каталог" sub={`${all.length} букетов от ${min.toLocaleString('ru-RU')} ₽`} />
+    <Catalog client:load cards={all} chips={allChips()} step={16} />
+  </section>
+  <QuizSection />
+  <FinalCta />
+  <ContactCard />
+</Base>

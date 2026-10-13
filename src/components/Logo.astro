@@ -1,0 +1,21 @@
+---
+// Логотип Elite Rose: монограмма ER (аватар сообщества VK) + надпись с засечками.
+import { u } from '../lib/url';
+const { light = false, compact = false } = Astro.props as { light?: boolean; compact?: boolean };
+---
+<a class:list={['logo', { 'logo--light': light, 'logo--compact': compact }]} href={u('/')} aria-label="Elite Rose – на главную">
+  <img src={u('/img/er/logo-256.webp')} alt="" width="44" height="44" />
+  <span class="logo__text"><b>ELITE ROSE</b><small>цветы на каждый день</small></span>
+</a>
+<style>
+  .logo { display: inline-flex; align-items: center; gap: 12px; color: var(--ink); }
+  .logo img { width: 44px; height: 44px; border-radius: 50%; }
+  .logo__text { display: grid; line-height: 1; }
+  .logo b { font: 500 28px/1 var(--head-font); letter-spacing: .08em; }
+  .logo small { font: 500 9.5px/1 var(--body-font); letter-spacing: .32em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .logo--light { color: #f6f0e7; }
+  .logo--light small { color: rgba(246, 240, 231, .6); }
+  .logo--compact img { width: 34px; height: 34px; }
+  .logo--compact b { font-size: 21px; }
+  .logo--compact small { display: none; }
+</style>

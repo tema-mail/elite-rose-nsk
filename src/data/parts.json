@@ -1,0 +1,50 @@
+[
+ {
+  "id": "roses",
+  "title": "Розы",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "spray",
+  "title": "Кустовые розы",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "chrys",
+  "title": "Хризантемы",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "mix",
+  "title": "Составные букеты",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "baskets",
+  "title": "Корзины",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "hydrangea",
+  "title": "Гортензии",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "wedding",
+  "title": "Свадебные букеты",
+  "parent": null,
+  "children": []
+ },
+ {
+  "id": "big",
+  "title": "Большие букеты",
+  "parent": null,
+  "children": []
+ }
+]

@@ -1,0 +1,44 @@
+---
+// «Спасибо»: заявка собрана в текст и скопирована – отправляем её магазину в VK (своего приёмника заявок у Elite Rose нет).
+import Base from '../layouts/Base.astro';
+import { u } from '../lib/url';
+import { SITE } from '../lib/site';
+---
+<Base title="Заявка готова – Elite Rose" noindex noSticky>
+  <section class="container ty">
+    <div class="ty__card pink-card">
+      <span class="ty__ok" aria-hidden="true">✓</span>
+      <h1 class="h1">Заявка готова</h1>
+      <p class="ty__text">Мы скопировали текст заявки. Отправьте его нам ВКонтакте – флорист ответит, соберёт букет и пришлёт фото на согласование.</p>
+      <pre class="ty__msg" id="ty-msg" hidden></pre>
+      <div class="ty__btns">
+        <a class="btn btn--white" href={SITE.vkChat} target="_blank" rel="noopener">Отправить ВКонтакте</a>
+        <button type="button" class="btn btn--outline" id="ty-copy">Скопировать ещё раз</button>
+        <a class="btn btn--outline" href={SITE.phoneHref}>Позвонить {SITE.phone}</a>
+      </div>
+      <a class="ty__home" href={u('/catalog')}>← Вернуться в каталог</a>
+    </div>
+    <div class="ty__photo"><img src={u('/img/er/roses-3.webp')} alt="" /></div>
+  </section>
+  <script>
+    let text = '';
+    try { text = sessionStorage.getItem('er_last_message') || ''; } catch {}
+    const box = document.getElementById('ty-msg');
+    if (box && text) { box.textContent = text; box.hidden = false; }
+    document.getElementById('ty-copy')?.addEventListener('click', async (e) => {
+      try { await navigator.clipboard.writeText(text); (e.target as HTMLElement).textContent = 'Скопировано'; } catch {}
+    });
+  </script>
+</Base>
+<style>
+  .ty { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; padding-top: 16px; }
+  .ty__card { display: grid; gap: 18px; align-content: center; justify-items: start; padding: 56px; min-height: 560px; }
+  .ty__ok { width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(230, 211, 179, .6); color: #e6d3b3; display: grid; place-items: center; font-size: 26px; }
+  .ty__text { font-size: 16px; max-width: 520px; }
+  .ty__msg { width: 100%; max-height: 220px; overflow: auto; margin: 0; padding: 16px 18px; border-radius: 4px; background: rgba(255,255,255,.06); color: #e9e2d6; font: 13px/1.5 var(--body-font); white-space: pre-wrap; }
+  .ty__btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ty__home { font-size: 14px; color: #e6d3b3; }
+  .ty__photo { border-radius: 6px; overflow: hidden; }
+  .ty__photo img { width: 100%; height: 100%; object-fit: cover; }
+  @media (max-width: 1023px) { .ty { grid-template-columns: 1fr; } .ty__photo { display: none; } .ty__card { padding: 32px 20px; min-height: 0; } .ty__btns .btn { width: 100%; } }
+</style>

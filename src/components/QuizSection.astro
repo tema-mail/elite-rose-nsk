@@ -1,0 +1,11 @@
+---
+// Квиз подбора букета. id="Quiz" – на него ведут кнопки «Помогите выбрать» (/#Quiz).
+import Quiz from '../islands/Quiz';
+import { u } from '../lib/url';
+import { products } from '../lib/catalog';
+// Фото без впечатанных цен – товар «Букет гигант в корзине из кустовой розы».
+const pic = (products.find((p) => p.title.startsWith('Букет гигант'))?.images[0] ?? '') + '-1000.webp';
+---
+<section class="section container" id="Quiz">
+  <Quiz client:visible image={u(pic)} />
+</section>
