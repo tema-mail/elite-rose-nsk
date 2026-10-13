@@ -1,0 +1,32 @@
+---
+// Полоса доверия: рейтинг VK + цифры каталога.
+import { SITE } from '../lib/site';
+const { stats } = Astro.props as { stats: { value: string; label: string }[] };
+---
+<section class="section container">
+  <div class="st2">
+    <a class="st2__rating reveal" href={SITE.rating.url} target="_blank" rel="noopener">
+      <span class="st2__big">{SITE.rating.value}</span>
+      <span class="st2__stars" aria-hidden="true">★★★★★</span>
+      <span class="st2__lbl">{SITE.rating.count} отзыва ВКонтакте →</span>
+    </a>
+    {stats.map((s, n) => (
+      <div class="st2__item reveal" style={`--i:${n + 1}`}><span class="st2__big">{s.value}</span><span class="st2__lbl">{s.label}</span></div>
+    ))}
+  </div>
+</section>
+<style>
+  .st2 { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .st2 > * { display: grid; gap: 10px; align-content: center; padding: 40px 32px; }
+  .st2 > * + * { border-left: 1px solid var(--line); }
+  .st2__big { font: 500 clamp(44px, 4.6vw, 72px)/1 var(--head-font); color: var(--ink); }
+  .st2__stars { color: var(--gold); letter-spacing: 4px; font-size: 15px; }
+  .st2__lbl { font-size: 13px; letter-spacing: .04em; color: var(--text); }
+  .st2__rating:hover .st2__lbl { color: var(--gold); }
+  @media (max-width: 1023px) {
+    .st2 { grid-template-columns: 1fr 1fr; }
+    .st2 > * { padding: 24px 16px; }
+    .st2 > :nth-child(3) { border-left: 0; }
+    .st2 > :nth-child(n + 3) { border-top: 1px solid var(--line); }
+  }
+</style>

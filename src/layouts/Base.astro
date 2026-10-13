@@ -35,7 +35,7 @@ const closed = noindex || import.meta.env.PUBLIC_NOINDEX === '1';
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
-    <meta name="theme-color" content="#1c201f" />
+    <meta name="theme-color" content="var(--page)" />
     <link rel="icon" href={u('/img/er/logo-256.webp')} type="image/webp" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

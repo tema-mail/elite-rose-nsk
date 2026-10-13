@@ -1,19 +1,22 @@
 /* Elite Rose – система стилей. Тёмные карточки, бордовый и шампань – по обложке сообщества VK. */
 :root {
-  --pink: #1c201f;
-  --pink-soft: #f3ece3;
-  --pink-deep: #2b302e;
-  --mauve: #7a1f2b;
-  --mauve-dark: #5e1620;
-  --ink: #1c201f;
-  --text: #4c4a45;
-  --muted: #8b8780;
-  --line: #e4dccf;
-  --bg-soft: #f3eee6;
-  --beige: #c9b08a;
-  --gold: #c9b08a;
-  --white: #fff;
-  --page: #fbf8f3;
+  color-scheme: dark;
+  --page: #0c0f0e;
+  --white: #141817;
+  --bg-soft: #191e1c;
+  --pink: #161b19;
+  --pink-soft: rgba(201, 169, 110, .1);
+  --pink-deep: #222826;
+  --mauve: #e2cfae;
+  --mauve-dark: #c9a96e;
+  --gold: #c9a96e;
+  --wine: #7d1d2b;
+  --wine-hi: #9a2638;
+  --ink: #f2e9da;
+  --text: #b9b0a2;
+  --muted: #847d72;
+  --line: rgba(226, 207, 174, .14);
+  --beige: #c9a96e;
   --radius-xl: 6px;
   --radius-l: 6px;
   --radius-m: 4px;
@@ -22,7 +25,7 @@
   --container: 1440px;
   --head-font: 'Cormorant Garamond', Georgia, serif;
   --body-font: 'Manrope', system-ui, sans-serif;
-  --shadow: 0 14px 40px rgba(28, 32, 31, 0.14);
+  --shadow: 0 24px 60px rgba(0, 0, 0, .45);
   --ease: cubic-bezier(.2, .7, .2, 1);
   --header-h: 128px;
 }
@@ -116,7 +119,7 @@ p { margin: 0; }
 .pink-card::before { top: -40px; left: -40px; }
 .pink-card::after { right: 40px; bottom: -70px; }
 
-.outline-card { border: 1px solid var(--mauve); border-radius: var(--radius-l); background: var(--white); }
+.outline-card { border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--white); }
 
 /* Горизонтальная лента на телефоне */
 .hscroll { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -145,24 +148,37 @@ textarea.input { height: auto; min-height: 110px; padding: 14px 18px; resize: ve
 .check a { text-decoration: underline; }
 
 
-/* Тёмная карточка (на месте розовой у шаблона): светлый текст, шампань-заголовки. */
-.pink-card {
-  --mauve: #e6d3b3; --ink: #f6f0e7; --text: #cfc6b8; --muted: #a39b8f; --line: #3b403e; --pink-soft: #2b302e;
-  color: var(--text);
-  background-image: radial-gradient(120% 90% at 85% 10%, rgba(122, 31, 43, .35), transparent 60%);
-}
-/* Белые блоки внутри тёмной карточки возвращают светлую палитру. */
-.pink-card .quiz__box, .pink-card .lead__form {
-  --mauve: #7a1f2b; --ink: #1c201f; --text: #4c4a45; --muted: #8b8780; --line: #e4dccf; --pink-soft: #f3ece3;
-  color: var(--text);
-}
-.btn { letter-spacing: .06em; text-transform: uppercase; font-size: 13px; font-weight: 600; }
-.btn--white { color: #1c201f; background: #f6f0e7; --flower: #7a1f2b; }
-.btn--outline { --flower: #7a1f2b; }
-.pink-card .btn--outline { --flower: #e6d3b3; }
-.btn--pink { color: #f6f0e7; --flower: #e6d3b3; }
-.btn--pink:hover { background: var(--mauve); }
-.btn--mauve { background: var(--mauve); --flower: #e6d3b3; }
-.pink-card .btn--outline { border-color: rgba(230, 211, 179, .6); }
-.chip { letter-spacing: .02em; }
-.badge { letter-spacing: .14em; text-transform: uppercase; font-size: 12px; border-color: rgba(230, 211, 179, .55); }
+/* Elite Rose – тёмная премиальная тема. Цифры – ровные (в Cormorant по умолчанию «старинные»). */
+*, *::before, *::after { font-variant-numeric: lining-nums !important; }
+.pink-card { background: linear-gradient(160deg, #181d1b 0%, #111413 60%); border: 1px solid var(--line); color: var(--text); }
+.pink-card::before, .pink-card::after { display: none; }
+.btn { letter-spacing: .12em; text-transform: uppercase; font-size: 12.5px; font-weight: 600; position: relative; overflow: hidden; }
+.btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.22) 50%, transparent 70%); transform: translateX(-120%); transition: transform .8s var(--ease); }
+.btn:hover::after { transform: translateX(120%); }
+.btn--white { background: var(--ink); color: #0c0f0e; --flower: var(--wine); }
+.btn--white:hover { background: var(--white); box-shadow: 0 10px 30px rgba(226, 207, 174, .18); }
+.btn--pink { background: var(--gold); color: #0c0f0e; --flower: #0c0f0e; }
+.btn--pink:hover { background: #d8bb85; }
+.btn--mauve { background: var(--wine); color: var(--ink); --flower: var(--mauve); }
+.btn--mauve:hover { background: var(--wine-hi); }
+.btn--outline { border-color: rgba(226, 207, 174, .45); color: var(--ink); --flower: var(--gold); }
+.btn--outline:hover { background: var(--ink); border-color: var(--ink); color: #0c0f0e; }
+.chip { border-color: rgba(226, 207, 174, .3); color: var(--text); letter-spacing: .02em; }
+.chip:hover { background: rgba(226, 207, 174, .08); color: var(--ink); }
+.chip.is-active, .chip[aria-pressed='true'] { background: var(--gold); border-color: var(--gold); color: #0c0f0e; }
+.badge { letter-spacing: .22em; text-transform: uppercase; font-size: 11.5px; border-color: rgba(226, 207, 174, .35); color: var(--mauve); }
+.icon-btn { border-color: rgba(226, 207, 174, .35); background: transparent; color: var(--ink); }
+.icon-btn:hover { background: rgba(226, 207, 174, .08); }
+.icon-btn__count { background: var(--gold); color: #0c0f0e; }
+.input { background: #101312; border-color: var(--line); color: var(--ink); }
+.input::placeholder { color: var(--muted); }
+.check input { accent-color: var(--gold); }
+.kicker { font: 600 11.5px/1 var(--body-font); letter-spacing: .32em; text-transform: uppercase; color: var(--gold); }
+::selection { background: var(--wine); color: var(--ink); }
+
+/* Анимации: появление при прокрутке с задержкой по порядку (--i), медленный «дышащий» зум фото. */
+.reveal { transition-delay: calc(var(--i, 0) * 90ms); }
+@keyframes er-zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes er-up { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes er-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

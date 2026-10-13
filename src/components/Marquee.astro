@@ -1,0 +1,16 @@
+---
+// Бегущая строка разделов – курсивом с засечками, бесконечная.
+const { items } = Astro.props as { items: string[] };
+const row = [...items, ...items];
+---
+<div class="mq" aria-hidden="true">
+  <div class="mq__track">{row.map((t) => <span>{t}<i>✦</i></span>)}</div>
+</div>
+<style>
+  .mq { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; margin-top: 8px; }
+  .mq__track { display: flex; width: max-content; animation: mq 38s linear infinite; }
+  .mq span { display: inline-flex; align-items: center; gap: 34px; padding-right: 34px; font: italic 500 clamp(26px, 3vw, 44px)/1 var(--head-font); color: var(--mauve); white-space: nowrap; }
+  .mq i { font-style: normal; font-size: .45em; color: var(--gold); }
+  .mq:hover .mq__track { animation-play-state: paused; }
+  @keyframes mq { to { transform: translateX(-50%); } }
+</style>

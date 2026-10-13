@@ -14,7 +14,7 @@ import { IconFlower, Social } from '../islands/icons';
       <dt>Сообщество</dt><dd><a href={SITE.vk} target="_blank" rel="noopener">vk.ru/elite_rose_nsk</a></dd>
     </dl>
     <div class="cc__btns">
-      <a class="btn btn--pink" href={u('/catalog')}>Выбрать букет <IconFlower /></a>
+      <a class="btn btn--white" href={u('/catalog')}>Выбрать букет <IconFlower /></a>
       {SOCIALS.map((s) => <a class="cc__soc" href={s.href} target="_blank" rel="noopener" aria-label={s.label}><Social id={s.id} size={20} /></a>)}
     </div>
   </div>
@@ -25,15 +25,15 @@ import { IconFlower, Social } from '../islands/icons';
 <style>
   .cc { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .cc__card { padding: 48px 50px; border-radius: var(--radius-xl); background: var(--bg-soft); border: 1px solid var(--line); display: grid; gap: 28px; }
-  .cc__title { font: 600 clamp(30px, 3.4vw, 48px)/1.1 var(--head-font); color: var(--mauve); }
+  .cc__title { font: 500 clamp(36px, 3.6vw, 56px)/1.05 var(--head-font); color: var(--ink); }
   .cc__dl { margin: 0; display: grid; gap: 8px; }
-  .cc__dl dt { font: 600 14px/1 var(--body-font); color: var(--ink); margin-top: 10px; }
+  .cc__dl dt { font: 600 11px/1 var(--body-font); letter-spacing: .28em; text-transform: uppercase; color: var(--gold); margin-top: 14px; }
   .cc__dl dd { margin: 0; font: 500 clamp(24px, 2.6vw, 38px)/1.2 var(--head-font); color: var(--ink); }
   .cc__btns { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .cc__soc { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: #1c201f; color: #e6d3b3; transition: background-color .2s, color .2s; }
+  .cc__soc { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: rgba(201, 169, 110, .08); color: var(--gold); box-shadow: inset 0 0 0 1px rgba(201, 169, 110, .3); transition: background-color .2s, color .2s; }
   .cc__soc:hover { background: var(--mauve); color: #fff; }
   .cc__map { border-radius: var(--radius-xl); overflow: hidden; background: var(--bg-soft); min-height: 480px; }
-  .cc__map iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .cc__map iframe { width: 100%; height: 100%; border: 0; display: block; filter: grayscale(1) invert(.9) contrast(.85) brightness(.9); }
   @media (max-width: 1023px) {
     .cc { grid-template-columns: 1fr; }
     .cc__card { padding: 28px 20px; gap: 18px; }

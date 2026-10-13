@@ -1,17 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageHero from '../components/PageHero.astro';
+import HeroLux from '../components/HeroLux.astro';
+import Marquee from '../components/Marquee.astro';
 import SectionHead from '../components/SectionHead.astro';
-import PinkCta from '../components/PinkCta.astro';
-import Split from '../components/Split.astro';
+import WhyLux from '../components/WhyLux.astro';
+import ImageCard from '../components/ImageCard.astro';
+import Stats from '../components/Stats.astro';
 import QuizSection from '../components/QuizSection.astro';
 import DeliveryCards from '../components/DeliveryCards.astro';
 import Faq from '../components/Faq.astro';
-import FinalCta from '../components/FinalCta.astro';
 import ContactCard from '../components/ContactCard.astro';
 import Catalog from '../islands/Catalog';
 import { products, toCard, inPart, allChips, PART } from '../lib/catalog';
-import { SITE } from '../lib/site';
 
 const all = products.filter((p) => p.price && p.images.length).map(toCard);
 const big = products.filter((p) => inPart(p, PART.big)).sort((a, b) => (a.price ?? 0) - (b.price ?? 0)).map(toCard);
@@ -27,68 +27,62 @@ const faq = [
 ];
 ---
 <Base title="Elite Rose – доставка цветов и роз в Новосибирске" description="Доставим свежие цветы по Новосибирску за 60 минут. Розы и букеты по оптовым ценам, поставки каждые три дня, фото перед доставкой, гарантия 48 часов.">
-  <PageHero
-    badge="Самые доступные цены в городе"
+  <HeroLux
+    kicker="Новосибирск · самые доступные цены в городе"
     title="Доставим свежие цветы с гарантией, по Новосибирску"
     accent="за 60 минут"
     text="Соберём букет для важного повода или просто без повода. Перед доставкой пришлём фото готового заказа на согласование и доставим цветы по Новосибирску от 60 минут."
     image="/img/er/hero.webp"
     buttons={[{ label: 'Выбрать букет', href: '/#catalog' }, { label: 'Помогите выбрать', href: '/#Quiz' }]}
+    features={['wholesale', 'fresh', 'guarantee', 'delivery']}
   />
+  <Marquee items={['Розы 60–100 см', 'Кустовые розы', 'Хризантемы', 'Гортензии', 'Корзины', 'Свадебные букеты', '101 роза', 'Метровая роза «Explorer»']} />
 
   <section class="section container" id="catalog">
-    <SectionHead title="Каталог" sub={`${all.length} букетов и композиций с доставкой по Новосибирску`} action={{ label: 'Смотреть весь каталог', href: '/catalog', variant: 'pink' }} />
-    <Catalog client:visible cards={all} chips={allChips()} step={12} />
+    <SectionHead kicker="Каталог" title="Букеты на каждый день" sub={`${all.length} букетов и композиций с доставкой по Новосибирску`} action={{ label: 'Весь каталог', href: '/catalog' }} />
+    <Catalog client:visible cards={all} chips={allChips()} step={8} />
   </section>
 
-  <PinkCta
-    photo
-    badge="Гарантии"
+  <WhyLux
+    id="preim"
+    kicker="Почему Elite Rose"
+    title="Выбирают снова и снова"
+    lead="Когда хочется порадовать близкого человека, важно не просто заказать цветы – хочется быть уверенным, что всё получится именно так, как вы задумали."
+    image="/img/er/roses-2.webp"
+    items={[
+      { title: 'Свежие цветы по оптовым ценам', text: 'Поставки приходят каждые три дня, а цены – самые доступные в городе.' },
+      { title: 'Авторские букеты и композиции из роз', text: 'От 15 кустовых роз до корзины из 1001 розы и метровых роз «Explorer».' },
+      { title: 'Фото перед доставкой', text: 'Пришлём готовый букет на согласование и доставим по городу от двери до двери.' },
+      { title: 'Гарантия 48 часов и 5% бонусов', text: 'Отвечаем за свежесть, а с каждого заказа начисляем бонусы на следующую покупку.' },
+    ]}
+    buttons={[{ label: 'Выбрать букет', href: '/catalog' }, { label: 'Написать ВКонтакте', href: 'https://vk.me/elite_rose_nsk' }]}
+  />
+
+  <Stats stats={[{ value: String(all.length), label: 'букетов в каталоге' }, { value: '1001', label: 'роза – самый большой букет' }, { value: '3 дня', label: 'между свежими поставками' }]} />
+
+  <ImageCard
+    kicker="Гарантии"
     title="За что мы отвечаем в каждом заказе"
     text="Когда вы заказываете цветы для близкого человека, важно быть уверенным не только в том, как будет выглядеть букет, но и в том, как он будет собран и доставлен."
     image={photo('Корзина из 201 розы')}
     buttons={[{ label: 'Смотреть каталог', href: '/catalog' }, { label: 'Помогите выбрать', href: '/#Quiz' }]}
   />
 
-  <Split
-    id="preim"
-    title="Почему Elite Rose выбирают снова и снова"
-    image="/img/er/roses-2.webp"
-    html={`<p>Когда хочется порадовать близкого человека, важно не просто заказать цветы – хочется быть уверенным, что всё получится именно так, как вы задумали.</p>
-<p><b>Свежие цветы по оптовым ценам.</b> Поставки приходят каждые три дня, а цены – самые доступные в городе.</p>
-<p><b>Уникальные композиции из роз и авторские букеты.</b> От 15 кустовых роз до корзины из 1001 розы и метровых роз «Explorer».</p>
-<p><b>Фото перед доставкой.</b> Пришлём готовый букет на согласование, а доставим быстро – по городу от двери до двери.</p>
-<p>На букеты действует гарантия качества 48 часов, а с каждого заказа начисляем <b>5% бонусов</b> на следующую покупку.</p>`}
-    buttons={[{ label: 'Выбрать букет', href: '/catalog' }]}
-    social
-  />
-
   <section class="section container">
-    <a class="rating" href={SITE.rating.url} target="_blank" rel="noopener">
-      <span class="rating__value">{SITE.rating.value}</span>
-      <span class="rating__stars" aria-hidden="true">★★★★★</span>
-      <span class="rating__text">{SITE.rating.count} отзыва покупателей ВКонтакте<small>Смотреть отзывы →</small></span>
-    </a>
+    <SectionHead kicker="Вау-эффект" title="От 51 до 1001 розы" sub="Большие букеты для тех, кто хочет удивить" action={{ label: 'Все большие букеты', href: '/catalog?part=big' }} />
+    <Catalog client:visible cards={big} step={4} prices={false} sort={false} />
   </section>
 
   <QuizSection />
-
-  <section class="section container">
-    <SectionHead title="Вау-букеты" sub="От 51 до 1001 розы – для тех, кто хочет удивить" action={{ label: 'Помогите выбрать', href: '/#Quiz' }} />
-    <Catalog client:visible cards={big} step={8} prices={false} sort={false} />
-  </section>
-
   <DeliveryCards />
   <Faq items={faq} />
-  <FinalCta />
+  <ImageCard
+    align="right"
+    kicker="Elite Rose"
+    title="Хотите порадовать близкого человека уже сегодня?"
+    text="Выберите готовый букет в каталоге или расскажите нам, кому и по какому поводу нужны цветы. Флорист поможет с выбором, а перед доставкой мы пришлём фото готового заказа."
+    image="/img/er/roses-3.webp"
+    buttons={[{ label: 'Выбрать букет', href: '/catalog' }, { label: 'Помогите выбрать', lead: true }]}
+  />
   <ContactCard />
 </Base>
-<style>
-  .rating { display: flex; align-items: center; gap: 24px; padding: 28px 36px; border: 1px solid var(--line); border-radius: 6px; background: #fff; transition: box-shadow .25s; }
-  .rating:hover { box-shadow: var(--shadow); }
-  .rating__value { font: 500 72px/1 var(--head-font); color: var(--mauve); }
-  .rating__stars { color: #c9a24b; font-size: 22px; letter-spacing: 3px; }
-  .rating__text { display: grid; gap: 4px; font-size: 16px; color: var(--ink); }
-  .rating__text small { font-size: 13px; color: var(--mauve); font-weight: 600; }
-  @media (max-width: 1023px) { .rating { flex-wrap: wrap; gap: 8px 16px; padding: 20px; } .rating__value { font-size: 52px; } }
-</style>

@@ -1,0 +1,46 @@
+---
+// «Почему Elite Rose»: фото в раме слева, пронумерованные преимущества справа.
+import Btn, { type BtnProps } from './Btn.astro';
+import { u } from '../lib/url';
+interface Props { id?: string; kicker?: string; title: string; lead?: string; image: string; items: { title: string; text: string }[]; buttons?: BtnProps[] }
+const { id, kicker, title, lead, image, items, buttons = [] } = Astro.props;
+---
+<section class="section container why" id={id}>
+  <figure class="why__photo reveal"><img src={u(image)} alt="" loading="lazy" /></figure>
+  <div class="why__body">
+    {kicker && <p class="kicker reveal">{kicker}</p>}
+    <h2 class="h2 why__title reveal" style="--i:1">{title}</h2>
+    {lead && <p class="why__lead reveal" style="--i:2">{lead}</p>}
+    <ol class="why__list">
+      {items.map((it, n) => (
+        <li class="reveal" style={`--i:${n + 2}`}><span class="why__n">{String(n + 1).padStart(2, '0')}</span><div><h3>{it.title}</h3><p>{it.text}</p></div></li>
+      ))}
+    </ol>
+    {buttons.length > 0 && <div class="why__btns reveal" style="--i:6">{buttons.map((b, i) => <Btn {...b} variant={b.variant ?? (i === 0 ? 'mauve' : 'outline')} flower={b.flower ?? i === 0} />)}</div>}
+  </div>
+</section>
+<style>
+  .why { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 80px; align-items: center; }
+  .why__photo { position: relative; margin: 0; aspect-ratio: 4 / 5; border-radius: 6px; overflow: hidden; }
+  .why__photo::after { content: ''; position: absolute; inset: 14px; border: 1px solid rgba(226, 207, 174, .35); border-radius: 4px; pointer-events: none; }
+  .why__photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.6s var(--ease); }
+  .why__photo:hover img { transform: scale(1.05); }
+  .why__body { display: grid; gap: 22px; }
+  .why__title { color: var(--ink); }
+  .why__lead { font-size: 16px; line-height: 1.65; max-width: 560px; }
+  .why__list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+  .why__list li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 22px 0; border-top: 1px solid var(--line); }
+  .why__list li:last-child { border-bottom: 1px solid var(--line); }
+  .why__n { font: italic 500 34px/1 var(--head-font); color: var(--gold); }
+  .why__list h3 { font: 500 26px/1.15 var(--head-font); color: var(--ink); }
+  .why__list p { font-size: 14px; margin-top: 6px; }
+  .why__btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  @media (max-width: 1023px) {
+    .why { grid-template-columns: 1fr; gap: 28px; }
+    .why__photo { aspect-ratio: 4 / 4.4; }
+    .why__list li { grid-template-columns: 48px 1fr; padding: 16px 0; }
+    .why__n { font-size: 28px; }
+    .why__list h3 { font-size: 22px; }
+    .why__btns :global(.btn) { width: 100%; }
+  }
+</style>

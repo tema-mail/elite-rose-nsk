@@ -1,0 +1,36 @@
+---
+// Карточка с фото: фото фоном внутри границ карточки, затемнение слева – текст читается, ничего не торчит.
+import Btn, { type BtnProps } from './Btn.astro';
+import { u } from '../lib/url';
+interface Props { id?: string; kicker?: string; title: string; text?: string; image: string; buttons?: BtnProps[]; align?: 'left' | 'right' }
+const { id, kicker, title, text, image, buttons = [], align = 'left' } = Astro.props;
+---
+<section class="section container" id={id}>
+  <div class:list={['ic2 reveal', `ic2--${align}`]}>
+    <img class="ic2__img" src={u(image)} alt="" loading="lazy" />
+    <div class="ic2__body">
+      {kicker && <p class="kicker">{kicker}</p>}
+      <h2 class="h2 ic2__title">{title}</h2>
+      {text && <p class="ic2__text">{text}</p>}
+      {buttons.length > 0 && <div class="ic2__btns">{buttons.map((b, i) => <Btn {...b} variant={b.variant ?? (i === 0 ? 'white' : 'outline')} flower={b.flower ?? i === 0} />)}</div>}
+    </div>
+  </div>
+</section>
+<style>
+  .ic2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 540px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: linear-gradient(160deg, #181d1b, #111413); }
+  .ic2__img { grid-column: 2; grid-row: 1; width: 100%; height: 100%; object-fit: cover; transition: transform 2s var(--ease); }
+  .ic2:hover .ic2__img { transform: scale(1.04); }
+  .ic2__body { grid-column: 1; grid-row: 1; position: relative; z-index: 1; display: grid; gap: 20px; align-content: center; padding: 64px; }
+  .ic2--right .ic2__img { grid-column: 1; }
+  .ic2--right .ic2__body { grid-column: 2; }
+  .ic2__title { color: var(--ink); }
+  .ic2__text { font-size: 15px; line-height: 1.65; max-width: 520px; }
+  .ic2__btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  @media (max-width: 1023px) {
+    .ic2 { grid-template-columns: 1fr; min-height: 0; }
+    .ic2__img, .ic2--right .ic2__img { grid-column: 1; grid-row: 1; height: 300px; }
+    .ic2__body, .ic2--right .ic2__body { grid-column: 1; grid-row: 2; padding: 26px 20px 28px; }
+    .ic2__btns { flex-direction: column; }
+    .ic2__btns :global(.btn) { width: 100%; }
+  }
+</style>

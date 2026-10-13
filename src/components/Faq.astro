@@ -17,13 +17,14 @@ const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: i
   <script type="application/ld+json" set:html={JSON.stringify(ld)} />
 </section>
 <style>
-  .faq { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
-  .faq__item + .faq__item { border-top: 1px solid var(--ink); }
-  summary { display: flex; align-items: center; gap: 6px; padding: 30px 0; cursor: pointer; list-style: none; font: 400 19px/1.3 var(--body-font); color: var(--mauve); }
+  .faq { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .faq__item + .faq__item { border-top: 1px solid var(--line); }
+  summary { display: flex; align-items: center; gap: 6px; padding: 30px 0; cursor: pointer; list-style: none; font: 500 26px/1.25 var(--head-font); color: var(--ink); transition: color .2s; }
+  summary:hover { color: var(--gold); }
   summary::-webkit-details-marker { display: none; }
   .faq__q { flex: 1; }
   .faq__plus { position: relative; width: 28px; height: 28px; flex: none; }
-  .faq__plus::before, .faq__plus::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--mauve); transition: transform .3s var(--ease); }
+  .faq__plus::before, .faq__plus::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--gold); transition: transform .3s var(--ease); }
   .faq__plus::after { transform: rotate(90deg); }
   details[open] .faq__plus::after { transform: rotate(0); }
   .faq__a { padding: 0 60px 28px 0; font-size: 15px; line-height: 1.6; max-width: 900px; }

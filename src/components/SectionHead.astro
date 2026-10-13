@@ -1,9 +1,10 @@
 ---
 import Btn, { type BtnProps } from './Btn.astro';
-const { title, sub, action, center = false, id } = Astro.props as { title: string; sub?: string; action?: BtnProps; center?: boolean; id?: string };
+const { title, sub, action, center = false, id, kicker } = Astro.props as { title: string; sub?: string; action?: BtnProps; center?: boolean; id?: string; kicker?: string };
 ---
 <div class:list={['sh', { 'sh--center': center }]} id={id}>
   <div class="sh__text">
+    {kicker && <p class="kicker">{kicker}</p>}
     <h2 class="h2" set:html={title.replace(/\n/g, '<br />')} />
     {sub && <p class="sh__sub">{sub}</p>}
   </div>
@@ -12,7 +13,8 @@ const { title, sub, action, center = false, id } = Astro.props as { title: strin
 </div>
 <style>
   .sh { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 40px; }
-  .sh__text { display: grid; gap: 18px; max-width: 760px; }
+  .sh__text { display: grid; gap: 16px; max-width: 760px; }
+  .sh :global(.h2) { color: var(--ink); }
   .sh__sub { font-size: 14px; color: var(--text); max-width: 620px; }
   .sh--center { justify-content: center; text-align: center; }
   .sh--center .sh__text { justify-items: center; max-width: 1000px; }
