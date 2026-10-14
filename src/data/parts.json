@@ -46,5 +46,11 @@
   "title": "Большие букеты",
   "parent": null,
   "children": []
+ },
+ {
+  "id": "testovyy-razdel",
+  "title": "Тестовый раздел",
+  "parent": null,
+  "children": []
  }
 ]
