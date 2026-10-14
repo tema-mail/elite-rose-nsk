@@ -1,0 +1,31 @@
+---
+// Заявки: доска по этапам (как у EV Sibir). Своего приёмника нет – заявки сейчас уходят в переписку VK,
+// поэтому карточки ниже – пример, как это будет выглядеть.
+import Admin from '../../layouts/Admin.astro';
+const cols = [
+  { t: 'Новые', items: [{ n: '1410-5827', who: 'Анна', what: '101 бордовая роза 100 см', sum: '33 300 ₽', when: 'Сегодня, как можно скорее', src: 'Корзина' }, { n: '1410-4410', who: 'Игорь', what: 'Квиз: любимой, годовщина, 5000–7000 ₽', sum: '–', when: 'Завтра', src: 'Квиз' }] },
+  { t: 'Согласуем фото', items: [{ n: '1310-2231', who: 'Мария', what: 'Букет из 51 розы 60 см', sum: '6 500 ₽', when: 'Сегодня 17:00–19:00', src: 'Корзина' }] },
+  { t: 'Доставляется', items: [{ n: '1310-1180', who: 'Олег', what: 'Корзина из 21 хризантемы', sum: '5 700 ₽', when: 'Сегодня 13:00–15:00', src: 'Скидка 20%' }] },
+  { t: 'Выполнено', items: [] },
+];
+---
+<Admin title="Заявки" active="leads">
+  <p class="demo-note">Пример доски. Сейчас заказы с сайта приходят текстом в переписку VK – сюда они начнут падать, когда подключим приёмник заявок.</p>
+  <div class="tools"><h1>Заявки</h1><input type="search" placeholder="Номер, имя, телефон" /><select><option>Все источники</option><option>Корзина</option><option>Квиз</option><option>Скидка 20%</option></select></div>
+  <div class="kb">
+    {cols.map((c) => (
+      <section class="kb__col">
+        <h2>{c.t} <span>{c.items.length}</span></h2>
+        {c.items.map((i) => (
+          <article class="kb__card">
+            <p class="kb__top"><b>№ {i.n}</b><span class="chip">{i.src}</span></p>
+            <p class="kb__who">{i.who}</p>
+            <p>{i.what}</p>
+            <p class="kb__meta"><span>{i.when}</span><b>{i.sum}</b></p>
+          </article>
+        ))}
+        {c.items.length === 0 && <p class="muted" style="font-size:12.5px;text-align:center;padding:16px 0">Пусто</p>}
+      </section>
+    ))}
+  </div>
+</Admin>

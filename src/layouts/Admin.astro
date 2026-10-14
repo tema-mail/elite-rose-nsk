@@ -1,0 +1,37 @@
+---
+// Каркас админки: шапка-вкладки как в Тильде, адрес сайта справа. Закрыта от поиска.
+import '../styles/admin.css';
+import { u } from '../lib/url';
+import { products } from '../lib/catalog';
+interface Props { title: string; active: 'pages' | 'products' | 'leads' | 'metrika' | 'seo' | 'tochka' }
+const { title, active } = Astro.props;
+const site = new URL(u('/'), Astro.site).href;
+const tabs = [
+  ['pages', '/admin/', 'Страницы сайта', ''],
+  ['products', '/admin/products/', 'Товары', String(products.length)],
+  ['leads', '/admin/leads/', 'Заявки', ''],
+  ['metrika', '/admin/metrika/', 'Метрика', ''],
+  ['seo', '/admin/seo/', 'SEO-аналитика', ''],
+  ['tochka', '/admin/tochka-a/', 'Точка А', ''],
+] as const;
+---
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} – админка Elite Rose</title>
+    <link rel="icon" href={u('/img/er/logo-256.webp')} type="image/webp" />
+  </head>
+  <body class="adm">
+    <nav class="topnav" aria-label="Разделы админки">
+      <span class="brand"><img src={u('/img/er/logo-256.webp')} alt="" />ELITE ROSE</span>
+      {tabs.map(([key, href, label, n]) => (
+        <a class:list={['tab', { on: active === key }]} href={u(href)}>{label}{n && <span class="n">{n}</span>}</a>
+      ))}
+      <span class="site">Сайт: <a href={site} target="_blank" rel="noopener">{site.replace(/^https?:\/\//, '')}</a></span>
+    </nav>
+    <main><slot /></main>
+  </body>
+</html>
