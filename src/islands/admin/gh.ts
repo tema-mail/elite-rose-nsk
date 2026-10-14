@@ -11,7 +11,9 @@ export const getToken = () => { try { return localStorage.getItem(KEY) || ''; } 
 export const setToken = (t: string) => { try { t ? localStorage.setItem(KEY, t) : localStorage.removeItem(KEY); } catch {} };
 
 async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
+  // no-store: иначе браузер отдаёт из кэша старый «последний коммит», и следующее сохранение не проходит.
   const res = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
+    cache: 'no-store',
     ...init,
     headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', ...(init.headers || {}) },
   });
@@ -58,10 +60,10 @@ export async function commit(files: FileChange[], message: string): Promise<stri
   throw new Error('Не удалось сохранить');
 }
 
-/** Статус последней сборки сайта (GitHub Actions). */
-export async function lastBuild(): Promise<{ status: string; conclusion: string | null; url: string } | null> {
-  const r = await api<{ workflow_runs: { status: string; conclusion: string | null; html_url: string }[] }>(`/actions/runs?branch=${BRANCH}&per_page=1`);
-  const run = r.workflow_runs[0];
+/** Статус сборки сайта, запущенной конкретным коммитом (пока её нет – null). */
+export async function buildOf(sha: string): Promise<{ status: string; conclusion: string | null; url: string } | null> {
+  const r = await api<{ workflow_runs: { status: string; conclusion: string | null; html_url: string; head_sha: string }[] }>(`/actions/runs?branch=${BRANCH}&per_page=10`);
+  const run = r.workflow_runs.find((x) => x.head_sha === sha);
   return run ? { status: run.status, conclusion: run.conclusion, url: run.html_url } : null;
 }
 

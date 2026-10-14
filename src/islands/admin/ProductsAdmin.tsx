@@ -3,7 +3,7 @@ import type { Product, Part } from '../../lib/catalog';
 import ProductEditor, { type AdmProduct } from './ProductEditor';
 import CsvImport from './CsvImport';
 import GhConnect from './GhConnect';
-import { PARTS_PATH, PRODUCTS_PATH, UPLOADS_DIR, commit, fileToBase64, getToken, lastBuild, readJson, slugify, type FileChange } from './gh';
+import { PARTS_PATH, PRODUCTS_PATH, UPLOADS_DIR, buildOf, commit, fileToBase64, getToken, readJson, slugify, type FileChange } from './gh';
 
 // Раздел «Товары» по образцу магазина Тильды. С подключённым ключом GitHub изменения сохраняются
 // в src/data/*.json одним коммитом, и сайт пересобирается (~1 минута). Без ключа – только просмотр.
@@ -18,7 +18,7 @@ const toAdm = (p: Product): AdmProduct => ({
   seoTitle: (p as any).seoTitle ?? '', seoDescr: (p as any).seoDescr ?? '', weight: '', size: '',
 });
 
-type Status = { kind: 'idle' | 'saving' | 'building' | 'done' | 'error'; text: string; url?: string };
+type Status = { kind: 'idle' | 'saving' | 'building' | 'done' | 'error'; text: string; url?: string; sha?: string };
 
 export default function ProductsAdmin({ items, parts: initParts, base }: { items: Product[]; parts: Part[]; base: string }) {
   const [raw, setRaw] = useState<Product[]>(items);
@@ -41,14 +41,15 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
   };
   useEffect(() => { if (getToken()) { setConnected(true); reload().catch(() => setStatus({ kind: 'error', text: 'Не удалось загрузить данные из GitHub – проверьте ключ' })); } }, []);
 
-  // Следим за сборкой сайта после сохранения.
+  // Следим за сборкой сайта, которую запустил именно наш коммит (более ранние сборки не считаются).
   useEffect(() => {
-    if (status.kind !== 'building') return;
+    if (status.kind !== 'building' || !status.sha) return;
+    const sha = status.sha;
     let stop = false;
     const tick = async () => {
       if (stop) return;
       try {
-        const b = await lastBuild();
+        const b = await buildOf(sha);
         if (b && b.status === 'completed') {
           setStatus(b.conclusion === 'success' ? { kind: 'done', text: 'Сайт обновлён – изменения уже на сайте', url: b.url } : { kind: 'error', text: 'Сборка сайта упала – откройте журнал', url: b.url });
           return;
@@ -59,7 +60,7 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
     };
     const t = setTimeout(tick, 8000);
     return () => { stop = true; clearTimeout(t); };
-  }, [status.kind]);
+  }, [status.kind, status.sha]);
 
   const list = useMemo(() => raw.map(toAdm), [raw]);
   const title = (id: string) => parts.find((p) => p.id === id)?.title ?? id;
@@ -81,8 +82,8 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
     try {
       const files: FileChange[] = [{ path: PRODUCTS_PATH, text: JSON.stringify(nextRaw, null, 1) + '\n' }, ...extra];
       if (nextParts) files.push({ path: PARTS_PATH, text: JSON.stringify(nextParts, null, 1) + '\n' });
-      await commit(files, `Админка: ${message}`);
-      setStatus({ kind: 'building', text: 'Сохранено. Сайт обновляется – обычно около минуты' });
+      const sha = await commit(files, `Админка: ${message}`);
+      setStatus({ kind: 'building', text: 'Сохранено. Сайт обновляется – обычно около минуты', sha });
     } catch (e: any) {
       setStatus({ kind: 'error', text: `Не сохранилось: ${e.message}` });
     }
