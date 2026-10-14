@@ -14,6 +14,7 @@
 - Страницы: главная, `/catalog` (разделы – `?part=<id>`), карточки `/catalog/tproduct/<id>-<slug>`, `/order`, `/favorites`, `/thanks`.
 - Контакты и навигация – `src/lib/site.ts`; разделы – `scripts/import-vk.mjs` (по названию товара).
 - Заявки и заказы – `src/lib/forms.ts`: собираются в текст и уходят в переписку VK (своего приёмника нет).
+- Админка `/admin` (`src/pages/admin`, `src/islands/admin`): товары и разделы сохраняются коммитом в `src/data/*.json` через GitHub API (`gh.ts`), фото – в `data-src/uploads`. Данные каталога правятся там, а не руками и не `npm run data`.
 
 ## Соглашения
 - Тире только короткое «–», длинное (U+2014) не ставить нигде.
