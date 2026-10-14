@@ -13,11 +13,11 @@ export default function GhConnect({ onClose, onConnected }: { onClose: () => voi
     setBusy(true); setErr('');
     setToken(t.trim());
     try {
-      if (!(await checkAccess())) throw new Error('У ключа нет права записи в репозиторий');
+      await checkAccess();
       onConnected(true);
     } catch (e: any) {
       setToken('');
-      setErr(e.message.includes('401') ? 'Ключ не подошёл' : e.message);
+      setErr(e.message.includes('401') ? 'Ключ не подошёл или истёк срок' : e.message);
     }
     setBusy(false);
   };

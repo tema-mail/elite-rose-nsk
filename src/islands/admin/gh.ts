@@ -24,10 +24,25 @@ async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
 const b64utf8 = (s: string) => { const bytes = new TextEncoder().encode(s); let bin = ''; bytes.forEach((b) => (bin += String.fromCharCode(b))); return btoa(bin); };
 const utf8b64 = (b: string) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
 
-/** Проверка ключа: есть ли право записи в репозиторий. */
-export async function checkAccess(): Promise<boolean> {
-  const r = await api<{ permissions?: { push?: boolean } }>('');
-  return !!r.permissions?.push;
+/** Проверка ключа на деле: читаем репозиторий и пробуем записать пустой объект (на сайт он не попадает).
+ *  permissions.push в ответе GitHub – права аккаунта, а не ключа, поэтому одной его проверки мало. */
+export async function checkAccess(): Promise<void> {
+  await api('');
+  try {
+    await api('/git/blobs', { method: 'POST', body: JSON.stringify({ content: '', encoding: 'utf-8' }) });
+  } catch (e: any) {
+    if (String(e.message).includes('403')) throw new Error('У ключа нет права записи: в настройках ключа у Contents выберите «Read and write» (Edit → Permissions → Repositories → Contents) и нажмите Update');
+    throw e;
+  }
+}
+
+/** Понятный текст ошибки GitHub для владельца. */
+export function humanError(e: any): string {
+  const m = String(e?.message ?? e);
+  if (m.includes('401')) return 'Ключ не подошёл или истёк срок – подключите новый';
+  if (m.includes('403') && m.includes('not accessible')) return 'У ключа нет права записи: в настройках ключа у Contents выберите «Read and write» и нажмите Update';
+  if (m.includes('403')) return 'GitHub отказал в доступе – проверьте права ключа';
+  return m;
 }
 
 /** Свежий JSON из ветки main (а не из собранного сайта – он отстаёт на время сборки). */

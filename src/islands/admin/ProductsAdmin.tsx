@@ -3,7 +3,7 @@ import type { Product, Part } from '../../lib/catalog';
 import ProductEditor, { type AdmProduct } from './ProductEditor';
 import CsvImport from './CsvImport';
 import GhConnect from './GhConnect';
-import { PARTS_PATH, PRODUCTS_PATH, UPLOADS_DIR, buildOf, commit, fileToBase64, getToken, readJson, slugify, type FileChange } from './gh';
+import { PARTS_PATH, PRODUCTS_PATH, UPLOADS_DIR, buildOf, commit, humanError, fileToBase64, getToken, readJson, slugify, type FileChange } from './gh';
 
 // Раздел «Товары» по образцу магазина Тильды. С подключённым ключом GitHub изменения сохраняются
 // в src/data/*.json одним коммитом, и сайт пересобирается (~1 минута). Без ключа – только просмотр.
@@ -85,7 +85,7 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
       const sha = await commit(files, `Админка: ${message}`);
       setStatus({ kind: 'building', text: 'Сохранено. Сайт обновляется – обычно около минуты', sha });
     } catch (e: any) {
-      setStatus({ kind: 'error', text: `Не сохранилось: ${e.message}` });
+      setStatus({ kind: 'error', text: `Не сохранилось: ${humanError(e)}` });
     }
   };
 
