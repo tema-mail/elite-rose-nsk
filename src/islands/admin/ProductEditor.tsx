@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'preact/hooks';
 
 // Редактор товара по образцу Тильды (Магазин → товар): вкладки «Основное», «Фото», «Разделы»,
-// «Варианты», «Размеры и вес», «SEO». Демо: правки живут в памяти страницы, на сервер не уходят.
+// «Варианты», «Размеры и вес», «SEO». Сохраняются: основное, фото, разделы, видимость и SEO;
+// «Варианты» и «Размеры и вес» пока только показывают, как это будет устроено.
 
 export interface AdmProduct {
   id: string; title: string; sku: string; price: number | null; priceOld: number | null; qty: string; mark: string;
@@ -12,10 +13,11 @@ export interface AdmPart { id: string; title: string }
 
 const TABS = ['Основное', 'Фото', 'Разделы', 'Варианты', 'Размеры и вес', 'SEO'] as const;
 
-export default function ProductEditor({ product, parts, base, onClose, onSave }: {
-  product: AdmProduct; parts: AdmPart[]; base: string; onClose: () => void; onSave: (p: AdmProduct) => void;
+export default function ProductEditor({ product, parts, base, onClose, onSave, onDelete }: {
+  product: AdmProduct; parts: AdmPart[]; base: string; onClose: () => void; onSave: (p: AdmProduct, files: File[]) => void; onDelete: (p: AdmProduct) => void;
 }) {
   const [p, setP] = useState<AdmProduct>(product);
+  const [files, setFiles] = useState<{ file: File; url: string }[]>([]);
   const [tab, setTab] = useState<(typeof TABS)[number]>('Основное');
   const isNew = !product.id;
   useEffect(() => setP(product), [product]);
@@ -42,7 +44,7 @@ export default function ProductEditor({ product, parts, base, onClose, onSave }:
             <span />{p.visible ? 'Опубликован' : 'Скрыт'}
           </label>
           <button class="btn" onClick={onClose}>Закрыть</button>
-          <button class="btn primary" onClick={() => onSave(p)}>Сохранить</button>
+          <button class="btn primary" onClick={() => onSave(p, files.map((f) => f.file))}>Сохранить</button>
         </header>
         <nav class="ed__tabs">{TABS.map((t) => <button class={t === tab ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}</nav>
 
@@ -72,8 +74,16 @@ export default function ProductEditor({ product, parts, base, onClose, onSave }:
                     <button class="gal__del" title="Убрать фото" onClick={() => setP({ ...p, images: p.images.filter((_, n) => n !== i) })}>×</button>
                   </figure>
                 ))}
+                {files.map((f, i) => (
+                  <figure class="gal__item gal__item--new">
+                    <img src={f.url} alt="" />
+                    {p.images.length === 0 && i === 0 && <span class="gal__cover">Обложка</span>}
+                    <span class="gal__badge">загрузится при сохранении</span>
+                    <button class="gal__del" title="Убрать фото" onClick={() => setFiles(files.filter((_, n) => n !== i))}>×</button>
+                  </figure>
+                ))}
                 <label class="gal__add">
-                  <input type="file" accept="image/*" multiple hidden />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => { const fl = [...((e.target as HTMLInputElement).files || [])]; setFiles([...files, ...fl.map((file) => ({ file, url: URL.createObjectURL(file) }))]); (e.target as HTMLInputElement).value = ''; }} />
                   <b>+</b><span>Загрузить фото</span><small>или перетащите сюда</small>
                 </label>
               </div>
@@ -93,6 +103,7 @@ export default function ProductEditor({ product, parts, base, onClose, onSave }:
 
           {tab === 'Варианты' && (
             <div>
+              <p class="demo-note" style="margin:0 0 12px">Вкладка пока показывает, как это будет устроено – варианты ещё не сохраняются.</p>
               <p class="muted" style="margin:0 0 12px">Варианты одного товара со своей ценой – например, количество роз или цвет. Покупатель выбирает вариант на странице товара.</p>
               <table class="vt">
                 <thead><tr><th>Параметр</th><th>Значение</th><th>Цена, ₽</th><th>Артикул</th><th>Кол-во</th></tr></thead>
@@ -113,6 +124,7 @@ export default function ProductEditor({ product, parts, base, onClose, onSave }:
 
           {tab === 'Размеры и вес' && (
             <div class="fgrid">
+              <p class="demo-note f--wide" style="margin:0">Вкладка пока показывает, как это будет устроено – вес и габариты ещё не сохраняются.</p>
               <p class="muted f--wide" style="margin:0">Нужны для расчёта доставки службами (Яндекс Доставка, СДЭК). Для курьера магазина можно не заполнять.</p>
               <label class="f"><span>Вес, кг</span><input value={p.weight} onInput={set('weight')} placeholder="2,5" /></label>
               <label class="f"><span>Габариты Д×Ш×В, см</span><input value={p.size} onInput={set('size')} placeholder="70×50×50" /></label>
@@ -121,7 +133,7 @@ export default function ProductEditor({ product, parts, base, onClose, onSave }:
 
           {tab === 'SEO' && (
             <div class="fgrid">
-              <label class="f f--wide"><span>Адрес страницы</span><div class="url"><em>/catalog/tproduct/{p.id || 'новый'}-</em><input value={slug.replace(/^\d+-/, '')} placeholder="buket-iz-51-rozy" /></div></label>
+              <label class="f f--wide"><span>Адрес страницы <em>создаётся из названия, менять не нужно</em></span><div class="url"><em>/catalog/tproduct/{p.id || 'новый'}-</em><input value={slug.replace(/^\d+-/, '')} placeholder="из названия" readOnly /></div></label>
               <label class="f f--wide"><span>Title <em>{(p.seoTitle || '').length}/70</em></span><input value={p.seoTitle} onInput={set('seoTitle')} /></label>
               <label class="f f--wide"><span>Description <em>{(p.seoDescr || '').length}/160</em></span><textarea rows={3} value={p.seoDescr} onInput={set('seoDescr')} /></label>
               <div class="snip f--wide">
@@ -132,7 +144,7 @@ export default function ProductEditor({ product, parts, base, onClose, onSave }:
             </div>
           )}
         </div>
-        {!isNew && <footer class="ed__foot"><button class="btn ghost" style="color:#b0333f">Удалить товар</button><a class="btn" href={`${base}${p.path}`} target="_blank">Открыть на сайте ↗</a></footer>}
+        {!isNew && <footer class="ed__foot"><button class="btn ghost" style="color:#b0333f" onClick={() => onDelete(p)}>Удалить товар</button><a class="btn" href={`${base}${p.path}`} target="_blank">Открыть на сайте ↗</a></footer>}
       </div>
     </div>
   );

@@ -1,23 +1,67 @@
-import { useMemo, useState } from 'preact/hooks';
-import ProductEditor, { type AdmProduct, type AdmPart } from './ProductEditor';
+import { useEffect, useMemo, useState } from 'preact/hooks';
+import type { Product, Part } from '../../lib/catalog';
+import ProductEditor, { type AdmProduct } from './ProductEditor';
 import CsvImport from './CsvImport';
+import GhConnect from './GhConnect';
+import { PARTS_PATH, PRODUCTS_PATH, UPLOADS_DIR, commit, fileToBase64, getToken, lastBuild, readJson, slugify, type FileChange } from './gh';
 
-// Раздел «Товары» админки по образцу магазина Тильды: разделы слева, таблица товаров, поиск,
-// массовые действия, «Добавить товар», «Импорт/Экспорт CSV». Демо – без сохранения на сервер.
+// Раздел «Товары» по образцу магазина Тильды. С подключённым ключом GitHub изменения сохраняются
+// в src/data/*.json одним коммитом, и сайт пересобирается (~1 минута). Без ключа – только просмотр.
 
 const fmt = (n: number | null) => (n == null ? '–' : n.toLocaleString('ru-RU').replace(/ /g, ' ') + ' ₽');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const htmlToText = (h: string) => h.replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
-export default function ProductsAdmin({ items, parts, base }: { items: AdmProduct[]; parts: AdmPart[]; base: string }) {
-  const [list, setList] = useState(items);
+const toAdm = (p: Product): AdmProduct => ({
+  id: p.id, title: p.title, sku: p.sku ?? '', price: p.price, priceOld: p.priceOld, qty: p.stock == null ? '' : String(p.stock),
+  mark: p.mark, descr: p.descr, text: htmlToText(p.text), images: p.images, parts: p.parts, path: p.path, visible: !p.hidden,
+  seoTitle: (p as any).seoTitle ?? '', seoDescr: (p as any).seoDescr ?? '', weight: '', size: '',
+});
+
+type Status = { kind: 'idle' | 'saving' | 'building' | 'done' | 'error'; text: string; url?: string };
+
+export default function ProductsAdmin({ items, parts: initParts, base }: { items: Product[]; parts: Part[]; base: string }) {
+  const [raw, setRaw] = useState<Product[]>(items);
+  const [parts, setParts] = useState<Part[]>(initParts);
+  const [connected, setConnected] = useState(false);
+  const [showConnect, setShowConnect] = useState(false);
   const [part, setPart] = useState('all');
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('site');
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [edit, setEdit] = useState<AdmProduct | null>(null);
   const [csv, setCsv] = useState(false);
-  const [toast, setToast] = useState('');
+  const [newPart, setNewPart] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>({ kind: 'idle', text: '' });
 
-  const say = (t: string) => { setToast(t); setTimeout(() => setToast(''), 3200); };
+  // С ключом – берём свежие данные прямо из репозитория: собранный сайт отстаёт на время сборки.
+  const reload = async () => {
+    const [p, pt] = await Promise.all([readJson<Product[]>(PRODUCTS_PATH), readJson<Part[]>(PARTS_PATH)]);
+    setRaw(p); setParts(pt);
+  };
+  useEffect(() => { if (getToken()) { setConnected(true); reload().catch(() => setStatus({ kind: 'error', text: 'Не удалось загрузить данные из GitHub – проверьте ключ' })); } }, []);
+
+  // Следим за сборкой сайта после сохранения.
+  useEffect(() => {
+    if (status.kind !== 'building') return;
+    let stop = false;
+    const tick = async () => {
+      if (stop) return;
+      try {
+        const b = await lastBuild();
+        if (b && b.status === 'completed') {
+          setStatus(b.conclusion === 'success' ? { kind: 'done', text: 'Сайт обновлён – изменения уже на сайте', url: b.url } : { kind: 'error', text: 'Сборка сайта упала – откройте журнал', url: b.url });
+          return;
+        }
+        if (b) setStatus((s) => ({ ...s, url: b.url }));
+      } catch {}
+      setTimeout(tick, 6000);
+    };
+    const t = setTimeout(tick, 8000);
+    return () => { stop = true; clearTimeout(t); };
+  }, [status.kind]);
+
+  const list = useMemo(() => raw.map(toAdm), [raw]);
   const title = (id: string) => parts.find((p) => p.id === id)?.title ?? id;
 
   const shown = useMemo(() => {
@@ -29,82 +73,167 @@ export default function ProductsAdmin({ items, parts, base }: { items: AdmProduc
     return out;
   }, [list, part, q, sort]);
 
-  const allOn = shown.length > 0 && shown.every((p) => sel.has(p.id));
-  const toggle = (id: string) => { const n = new Set(sel); n.has(id) ? n.delete(id) : n.add(id); setSel(n); };
-  const blank = (): AdmProduct => ({ id: '', title: '', sku: '', price: null, priceOld: null, qty: '', mark: '', descr: '', text: '', images: [], parts: part !== 'all' && part !== 'hidden' ? [part] : [], path: '', visible: true, seoTitle: '', seoDescr: '', weight: '', size: '' });
-
-  const save = (p: AdmProduct) => {
-    if (!p.title.trim()) return say('Укажите название товара');
-    if (p.id) setList(list.map((x) => (x.id === p.id ? p : x)));
-    else setList([{ ...p, id: `new-${Date.now()}`, path: '/catalog' }, ...list]);
-    setEdit(null);
-    say('Сохранено в демо – после перезагрузки страницы вернётся как было');
+  /** Сохранить новый список товаров (и, если есть, разделы и фото) одним коммитом. */
+  const persist = async (nextRaw: Product[], message: string, extra: FileChange[] = [], nextParts?: Part[]) => {
+    setRaw(nextRaw); if (nextParts) setParts(nextParts);
+    if (!connected) { setStatus({ kind: 'error', text: 'Изменение видно только у вас – подключите сохранение, чтобы оно попало на сайт' }); return; }
+    setStatus({ kind: 'saving', text: 'Сохраняем…' });
+    try {
+      const files: FileChange[] = [{ path: PRODUCTS_PATH, text: JSON.stringify(nextRaw, null, 1) + '\n' }, ...extra];
+      if (nextParts) files.push({ path: PARTS_PATH, text: JSON.stringify(nextParts, null, 1) + '\n' });
+      await commit(files, `Админка: ${message}`);
+      setStatus({ kind: 'building', text: 'Сохранено. Сайт обновляется – обычно около минуты' });
+    } catch (e: any) {
+      setStatus({ kind: 'error', text: `Не сохранилось: ${e.message}` });
+    }
   };
-  const bulk = (fn: (p: AdmProduct) => AdmProduct, msg: string) => { setList(list.map((p) => (sel.has(p.id) ? fn(p) : p))); setSel(new Set()); say(msg); };
+
+  const save = async (p: AdmProduct, files: File[]) => {
+    if (!p.title.trim()) return setStatus({ kind: 'error', text: 'Укажите название товара' });
+    const isNew = !p.id;
+    const id = isNew ? String(Date.now()) : p.id;
+    const old = raw.find((x) => x.id === id);
+    const uploads: FileChange[] = [];
+    const images = [...p.images];
+    let n = images.reduce((m, im) => Math.max(m, Number(im.match(/-(\d+)$/)?.[1] ?? -1) + 1), 0);
+    for (const f of files) {
+      const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+      uploads.push({ path: `${UPLOADS_DIR}/${id}-${n}.${ext}`, base64: await fileToBase64(f) });
+      images.push(`/img/up/${id}-${n}`);
+      n++;
+    }
+    const next: Product = {
+      ...(old ?? { sort: 0 }),
+      id, path: old?.path ?? `/catalog/tproduct/${id}-${slugify(p.title)}`,
+      title: p.title.trim(), descr: p.descr.trim(), text: esc(p.text.trim()).replace(/\n/g, '<br />'),
+      price: p.price, priceOld: p.priceOld, mark: p.mark.trim(), stock: p.qty.trim() ? Number(p.qty.replace(/\D/g, '')) : null,
+      parts: p.parts, images, sku: p.sku.trim(), hidden: !p.visible,
+      ...(p.seoTitle ? { seoTitle: p.seoTitle } : {}), ...(p.seoDescr ? { seoDescr: p.seoDescr } : {}),
+    } as Product;
+    const nextRaw = isNew ? [next, ...raw] : raw.map((x) => (x.id === id ? next : x));
+    setEdit(null);
+    await persist(nextRaw, `${isNew ? 'новый товар' : 'товар'} «${next.title}»`, uploads);
+  };
+
+  const remove = async (p: AdmProduct) => {
+    if (!confirm(`Удалить товар «${p.title}» с сайта насовсем? Скрыть его можно переключателем «На сайте».`)) return;
+    setEdit(null);
+    await persist(raw.filter((x) => x.id !== p.id), `удалён товар «${p.title}»`);
+  };
+
+  const setVisible = (ids: string[], visible: boolean) =>
+    persist(raw.map((x) => (ids.includes(x.id) ? { ...x, hidden: !visible } : x)), `${visible ? 'показано' : 'скрыто'} на сайте: ${ids.length} шт.`);
+
+  const addToPart = (ids: string[], pid: string) =>
+    persist(raw.map((x) => (ids.includes(x.id) && !x.parts.includes(pid) ? { ...x, parts: [...x.parts, pid] } : x)), `в раздел «${title(pid)}»: ${ids.length} шт.`);
+
+  const createPart = async (name: string) => {
+    const t = name.trim();
+    if (!t) return;
+    if (parts.some((p) => p.title.toLowerCase() === t.toLowerCase())) return setStatus({ kind: 'error', text: `Раздел «${t}» уже есть` });
+    let id = slugify(t); while (parts.some((p) => p.id === id)) id += '-2';
+    setNewPart(null);
+    const ids = [...sel];
+    const nextRaw = ids.length ? raw.map((x) => (sel.has(x.id) ? { ...x, parts: [...x.parts, id] } : x)) : raw;
+    await persist(nextRaw, `новый раздел «${t}»${ids.length ? ` + ${ids.length} товаров` : ''}`, [], [...parts, { id, title: t, parent: null, children: [] }]);
+    setSel(new Set()); setPart(id);
+  };
+
+  const allOn = shown.length > 0 && shown.every((p) => sel.has(p.id));
+  const toggle = (id: string) => { const s = new Set(sel); s.has(id) ? s.delete(id) : s.add(id); setSel(s); };
+  const blank = (): AdmProduct => ({ id: '', title: '', sku: `ER-${String(raw.length + 1).padStart(4, '0')}`, price: null, priceOld: null, qty: '', mark: '', descr: '', text: '', images: [], parts: part !== 'all' && part !== 'hidden' ? [part] : [], path: '', visible: true, seoTitle: '', seoDescr: '', weight: '', size: '' });
 
   return (
-    <div class="pa">
-      <aside class="pa__side">
-        <p class="pa__cap">Разделы</p>
-        <button class={part === 'all' ? 'on' : ''} onClick={() => setPart('all')}>Все товары<span>{list.length}</span></button>
-        {parts.map((pt) => (
-          <button class={part === pt.id ? 'on' : ''} onClick={() => setPart(pt.id)}>{pt.title}<span>{list.filter((p) => p.parts.includes(pt.id)).length}</span></button>
-        ))}
-        <button class={part === 'hidden' ? 'on' : ''} onClick={() => setPart('hidden')}>Скрытые<span>{list.filter((p) => !p.visible).length}</span></button>
-        <button class="pa__addpart" onClick={() => say('Демо: разделы добавим вместе с сохранением товаров')}>+ Добавить раздел</button>
-      </aside>
-
-      <section class="pa__main">
-        <div class="tools">
-          <h1>{part === 'all' ? 'Все товары' : part === 'hidden' ? 'Скрытые товары' : title(part)} <span class="muted" style="font-size:15px;font-weight:400">{shown.length}</span></h1>
-          <input type="search" placeholder="Название или артикул" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
-          <select value={sort} onChange={(e) => setSort((e.target as HTMLSelectElement).value)} aria-label="Сортировка">
-            <option value="site">Как на сайте</option><option value="name">По названию</option>
-            <option value="price-asc">Сначала дешевле</option><option value="price-desc">Сначала дороже</option>
-          </select>
-          <button class="btn" onClick={() => setCsv(true)}>⇪ Импорт CSV</button>
-          <a class="btn" href={`${base}/admin/products.csv`} download>⇩ Экспорт CSV</a>
-          <button class="btn primary" onClick={() => setEdit(blank())}>+ Добавить товар</button>
-        </div>
-
-        {sel.size > 0 && (
-          <div class="pa__bulk">
-            <b>Выбрано: {sel.size}</b>
-            <button class="btn" onClick={() => bulk((p) => ({ ...p, visible: false }), 'Скрыто с сайта (демо)')}>Скрыть</button>
-            <button class="btn" onClick={() => bulk((p) => ({ ...p, visible: true }), 'Опубликовано (демо)')}>Показать</button>
-            <select class="btn" onChange={(e) => { const v = (e.target as HTMLSelectElement).value; if (v) bulk((p) => ({ ...p, parts: p.parts.includes(v) ? p.parts : [...p.parts, v] }), `Добавлено в раздел «${title(v)}» (демо)`); }}>
-              <option value="">Добавить в раздел…</option>{parts.map((pt) => <option value={pt.id}>{pt.title}</option>)}
-            </select>
-            <button class="btn ghost" style="color:#b0333f" onClick={() => say('Демо: удаление подключим вместе с сохранением')}>Удалить</button>
-            <button class="btn ghost" onClick={() => setSel(new Set())}>Снять выбор</button>
-          </div>
+    <div>
+      <div class={`sync sync--${connected ? 'on' : 'off'}`}>
+        {connected ? (
+          <>
+            <span class="sync__dot" />
+            <span>Сохранение подключено – изменения попадают на сайт</span>
+            {status.kind !== 'idle' && <span class={`sync__st sync__st--${status.kind}`}>{status.text}{status.url && <> · <a href={status.url} target="_blank" rel="noopener">журнал сборки</a></>}</span>}
+            <button class="btn ghost" onClick={() => setShowConnect(true)}>Ключ</button>
+          </>
+        ) : (
+          <>
+            <span class="sync__dot" />
+            <span>Режим просмотра: изменения не сохраняются.</span>
+            {status.kind === 'error' && <span class="sync__st sync__st--error">{status.text}</span>}
+            <button class="btn primary" onClick={() => setShowConnect(true)}>Подключить сохранение</button>
+          </>
         )}
+      </div>
 
-        <div class="pt">
-          <div class="pt__head">
-            <label><input type="checkbox" checked={allOn} onChange={() => setSel(allOn ? new Set() : new Set(shown.map((p) => p.id)))} aria-label="Выбрать все" /></label>
-            <span></span><span>Товар</span><span>Разделы</span><span>Цена</span><span>Остаток</span><span>На сайте</span>
-          </div>
-          {shown.map((p) => (
-            <div class={`pt__row${sel.has(p.id) ? ' is-sel' : ''}${p.visible ? '' : ' is-off'}`} onClick={() => setEdit(p)}>
-              <label onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={sel.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Выбрать ${p.title}`} /></label>
-              {p.images[0] ? <img class="thumb" src={`${base}${p.images[0]}-480.webp`} alt="" loading="lazy" /> : <span class="thumb" />}
-              <div><span class="pname">{p.title}</span><span class="muted pt__sku">{p.sku || 'без артикула'}{p.mark && <i class="pt__mark">{p.mark}</i>}</span></div>
-              <div>{p.parts.map((id) => <span class="chip">{title(id)}</span>)}</div>
-              <div class="pt__price"><b>{fmt(p.price)}</b>{p.priceOld && <s>{fmt(p.priceOld)}</s>}</div>
-              <span class="muted">{p.qty || '∞'}</span>
-              <label class="sw" onClick={(e) => e.stopPropagation()} title={p.visible ? 'Скрыть с сайта' : 'Показать на сайте'}>
-                <input type="checkbox" checked={p.visible} onChange={() => setList(list.map((x) => (x.id === p.id ? { ...x, visible: !x.visible } : x)))} /><span />
-              </label>
-            </div>
+      <div class="pa">
+        <aside class="pa__side">
+          <p class="pa__cap">Разделы</p>
+          <button class={part === 'all' ? 'on' : ''} onClick={() => setPart('all')}>Все товары<span>{list.length}</span></button>
+          {parts.map((pt) => (
+            <button class={part === pt.id ? 'on' : ''} onClick={() => setPart(pt.id)}>{pt.title}<span>{list.filter((p) => p.parts.includes(pt.id)).length}</span></button>
           ))}
-          {shown.length === 0 && <p class="muted" style="padding:28px;text-align:center">Ничего не найдено</p>}
-        </div>
-      </section>
+          <button class={part === 'hidden' ? 'on' : ''} onClick={() => setPart('hidden')}>Скрытые<span>{list.filter((p) => !p.visible).length}</span></button>
+          {newPart === null ? (
+            <button class="pa__addpart" onClick={() => setNewPart('')}>+ Добавить раздел</button>
+          ) : (
+            <form class="pa__newpart" onSubmit={(e) => { e.preventDefault(); createPart(newPart); }}>
+              <input autoFocus placeholder="Название раздела" value={newPart} onInput={(e) => setNewPart((e.target as HTMLInputElement).value)} />
+              {sel.size > 0 && <small class="muted">Выбранные товары ({sel.size}) попадут в него</small>}
+              <div><button class="btn primary" type="submit">Создать</button><button class="btn ghost" type="button" onClick={() => setNewPart(null)}>Отмена</button></div>
+            </form>
+          )}
+        </aside>
 
-      {edit && <ProductEditor product={edit} parts={parts} base={base} onClose={() => setEdit(null)} onSave={save} />}
+        <section class="pa__main">
+          <div class="tools">
+            <h1>{part === 'all' ? 'Все товары' : part === 'hidden' ? 'Скрытые товары' : title(part)} <span class="muted" style="font-size:15px;font-weight:400">{shown.length}</span></h1>
+            <input type="search" placeholder="Название или артикул" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
+            <select value={sort} onChange={(e) => setSort((e.target as HTMLSelectElement).value)} aria-label="Сортировка">
+              <option value="site">Как на сайте</option><option value="name">По названию</option>
+              <option value="price-asc">Сначала дешевле</option><option value="price-desc">Сначала дороже</option>
+            </select>
+            <button class="btn" onClick={() => setCsv(true)}>⇪ Импорт CSV</button>
+            <a class="btn" href={`${base}/admin/products.csv`} download>⇩ Экспорт CSV</a>
+            <button class="btn primary" onClick={() => setEdit(blank())}>+ Добавить товар</button>
+          </div>
+
+          {sel.size > 0 && (
+            <div class="pa__bulk">
+              <b>Выбрано: {sel.size}</b>
+              <button class="btn" onClick={() => { setVisible([...sel], false); setSel(new Set()); }}>Скрыть с сайта</button>
+              <button class="btn" onClick={() => { setVisible([...sel], true); setSel(new Set()); }}>Показать на сайте</button>
+              <select class="btn" value="" onChange={(e) => { const v = (e.target as HTMLSelectElement).value; if (v) { addToPart([...sel], v); setSel(new Set()); } }}>
+                <option value="">Добавить в раздел…</option>{parts.map((pt) => <option value={pt.id}>{pt.title}</option>)}
+              </select>
+              <button class="btn ghost" onClick={() => setNewPart('')}>+ Новый раздел из выбранных</button>
+              <button class="btn ghost" onClick={() => setSel(new Set())}>Снять выбор</button>
+            </div>
+          )}
+
+          <div class="pt">
+            <div class="pt__head">
+              <label><input type="checkbox" checked={allOn} onChange={() => setSel(allOn ? new Set() : new Set(shown.map((p) => p.id)))} aria-label="Выбрать все" /></label>
+              <span></span><span>Товар</span><span>Разделы</span><span>Цена</span><span>Остаток</span><span>На сайте</span>
+            </div>
+            {shown.map((p) => (
+              <div class={`pt__row${sel.has(p.id) ? ' is-sel' : ''}${p.visible ? '' : ' is-off'}`} onClick={() => setEdit(p)}>
+                <label onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={sel.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Выбрать ${p.title}`} /></label>
+                {p.images[0] ? <img class="thumb" src={`${base}${p.images[0]}-480.webp`} alt="" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} /> : <span class="thumb" />}
+                <div><span class="pname">{p.title}</span><span class="muted pt__sku">{p.sku || 'без артикула'}{p.mark && <i class="pt__mark">{p.mark}</i>}{!p.visible && <i class="pt__off">скрыт</i>}</span></div>
+                <div>{p.parts.map((id) => <span class="chip">{title(id)}</span>)}</div>
+                <div class="pt__price"><b>{fmt(p.price)}</b>{p.priceOld && <s>{fmt(p.priceOld)}</s>}</div>
+                <span class="muted">{p.qty || '∞'}</span>
+                <label class="sw" onClick={(e) => e.stopPropagation()} title={p.visible ? 'Скрыть с сайта' : 'Показать на сайте'}>
+                  <input type="checkbox" checked={p.visible} onChange={() => setVisible([p.id], !p.visible)} /><span />
+                </label>
+              </div>
+            ))}
+            {shown.length === 0 && <p class="muted" style="padding:28px;text-align:center">Ничего не найдено</p>}
+          </div>
+        </section>
+      </div>
+
+      {edit && <ProductEditor product={edit} parts={parts} base={base} onClose={() => setEdit(null)} onSave={save} onDelete={remove} />}
       {csv && <CsvImport base={base} onClose={() => setCsv(false)} />}
-      {toast && <div class="pa__toast" role="status">{toast}</div>}
+      {showConnect && <GhConnect onClose={() => setShowConnect(false)} onConnected={(ok) => { setConnected(ok); setShowConnect(false); if (ok) reload(); }} />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { products, partById } from '../../lib/catalog';
+import { allProducts as products, partById } from '../../lib/catalog';
 
 // Выгрузка товаров в CSV формата магазина Тильды (разделитель «;», UTF-8 с BOM – открывается в Excel).
 const q = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;

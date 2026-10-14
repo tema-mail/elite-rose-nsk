@@ -146,3 +146,20 @@ details.pcat[open] .caret{transform:rotate(90deg)}
 .kb__who{font-weight:600}
 .kb__meta{display:flex;justify-content:space-between;color:#77817e;font-size:12px;margin-top:4px!important}
 .kb__meta b{color:#1e1e1e}
+/* Полоса сохранения */
+.sync{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin:0 0 14px;border-radius:10px;font-size:13.5px;border:1px solid #e2e5e3;background:#fff}
+.sync__dot{width:9px;height:9px;border-radius:50%;background:#b8bfbc;flex:none}
+.sync--on .sync__dot{background:#2e7d4f;box-shadow:0 0 0 4px rgba(46,125,79,.15)}
+.sync--off{border-color:#f0d9a8;background:#fffaf0}
+.sync .btn{margin-left:auto}
+.sync__st{padding:3px 10px;border-radius:12px;font-size:12.5px;background:#f0f2f1}
+.sync__st--saving,.sync__st--building{background:#fff3d6;color:#7a5a12}
+.sync__st--done{background:#e3f4ea;color:#1f6a3e}
+.sync__st--error{background:#fbe5e7;color:#9b2533}
+.sync__st a{color:inherit}
+.pa__newpart{display:grid;gap:8px;padding:10px;margin-top:6px;border-top:1px solid #eceeed}
+.pa__newpart input{height:34px;padding:0 10px;border:1px solid #d9dedc;border-radius:7px;font:inherit;font-size:13px}
+.pa__newpart div{display:flex;gap:6px}
+.pt__off{font-style:normal;margin-left:8px;padding:1px 6px;border-radius:4px;background:#e9ecea;color:#55605d;font-size:11px}
+.gal__item--new{outline:2px dashed #c9a96e;outline-offset:-2px}
+.gal__badge{position:absolute;left:6px;bottom:6px;right:6px;padding:2px 6px;border-radius:4px;background:rgba(28,32,31,.8);color:#fff;font-size:10.5px;text-align:center}

@@ -1,3 +1,4 @@
+// ВНИМАНИЕ: после запуска админки товары и разделы правятся в /admin – повторный импорт затрёт эти правки.
 // Товары Elite Rose из раздела «Товары» сообщества VK (снято 14.10.2026 в data-src/vk-products.json)
 // → src/data/products.json, src/data/parts.json, фото в public/img/p (webp 480/1000).
 // Разделы проставляются по названию товара – в VK у товаров нет машинно читаемых подборок.
@@ -46,6 +47,7 @@ for (const [i, r] of raw.entries()) {
     id, path: `/catalog/tproduct/${id}-${slug}`, title, descr: r.descr || '', text: '',
     price: r.price, priceOld: r.priceOld, mark: r.priceOld ? `-${Math.round((1 - r.price / r.priceOld) * 100)}%` : '',
     stock: null, parts: PARTS.filter((p) => p.test(title, r.price)).map((p) => p.id), sort: i, images,
+    sku: `ER-${String(i + 1).padStart(4, '0')}`, hidden: false,
   });
 }
 await writeFile(path.join(ROOT, 'src/data/products.json'), JSON.stringify(products, null, 1));

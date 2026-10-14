@@ -1,17 +1,11 @@
 ---
-// Раздел «Товары»: то же, что в каталоге сайта и в блоках товаров на главной (один источник – src/data/products.json).
+// Раздел «Товары»: те же товары, что в каталоге и блоках товаров на главной (src/data/products.json).
+// Скрытые тоже здесь – на сайте их нет.
 import Admin from '../../layouts/Admin.astro';
 import ProductsAdmin from '../../islands/admin/ProductsAdmin';
-import { products, parts } from '../../lib/catalog';
+import { allProducts, parts } from '../../lib/catalog';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const items = products.map((p, i) => ({
-  id: p.id, title: p.title, sku: `ER-${String(i + 1).padStart(4, '0')}`, price: p.price, priceOld: p.priceOld,
-  qty: p.stock == null ? '' : String(p.stock), mark: p.mark, descr: p.descr, text: p.text.replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, ''),
-  images: p.images, parts: p.parts, path: p.path, visible: true,
-  seoTitle: `${p.title} – купить с доставкой по Новосибирску | Elite Rose`, seoDescr: '', weight: '', size: '',
-}));
 ---
 <Admin title="Товары" active="products">
-  <p class="demo-note">Демо-режим: показывает, как будет устроено управление товарами. Правки и загрузка CSV пока не сохраняются – после перезагрузки всё вернётся. Экспорт CSV – настоящий.</p>
-  <ProductsAdmin client:load items={items} parts={parts.map((p) => ({ id: p.id, title: p.title }))} base={base} />
+  <ProductsAdmin client:load items={allProducts} parts={parts} base={base} />
 </Admin>

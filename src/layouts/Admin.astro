@@ -2,7 +2,7 @@
 // Каркас админки: шапка-вкладки как в Тильде, адрес сайта справа. Закрыта от поиска.
 import '../styles/admin.css';
 import { u } from '../lib/url';
-import { products } from '../lib/catalog';
+import { allProducts as products } from '../lib/catalog';
 interface Props { title: string; active: 'pages' | 'products' | 'leads' | 'metrika' | 'seo' | 'tochka' }
 const { title, active } = Astro.props;
 const site = new URL(u('/'), Astro.site).href;

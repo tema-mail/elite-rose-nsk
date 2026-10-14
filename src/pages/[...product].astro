@@ -26,8 +26,9 @@ const addons = isAddon ? [] : products
   .filter((x) => x.price && x.images.length && addonParts.some((id) => inPart(x, id)))
   .slice(0, 12).map(toCard);
 const partNames = p.parts.map((id) => partById.get(id)?.title).filter(Boolean);
-const title = `${p.title} – купить с доставкой по Новосибирску за ${rub(p.price!)} | Elite Rose`;
-const desc = `${p.title}${p.descr ? ': ' + p.descr.toLowerCase() : ''}. ${rub(p.price!)}. Доставка по Новосибирску от 60 минут, фото перед доставкой, гарантия 48 часов.`;
+// SEO-поля из админки, если заданы; иначе – шаблон.
+const title = (p as any).seoTitle || `${p.title} – купить с доставкой по Новосибирску за ${rub(p.price!)} | Elite Rose`;
+const desc = (p as any).seoDescr || `${p.title}${p.descr ? ': ' + p.descr.toLowerCase() : ''}. ${rub(p.price!)}. Доставка по Новосибирску от 60 минут, фото перед доставкой, гарантия 48 часов.`;
 const ld = {
   '@context': 'https://schema.org', '@type': 'Product', name: p.title, description: p.descr || p.title,
   image: p.images.map((i) => new URL(u(i + '-1000.webp'), Astro.site).href), sku: p.id,
