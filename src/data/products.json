@@ -1,25 +1,5 @@
 [
  {
-  "sort": 0,
-  "id": "1791973951698",
-  "path": "/catalog/tproduct/1791973951698-testovyy-buket",
-  "title": "Тестовый букет",
-  "descr": "",
-  "text": "",
-  "price": 1234,
-  "priceOld": null,
-  "mark": "",
-  "stock": null,
-  "parts": [
-   "testovyy-razdel"
-  ],
-  "images": [
-   "/img/up/1791973951698-0"
-  ],
-  "sku": "ER-0054",
-  "hidden": false
- },
- {
   "id": "11713447",
   "path": "/catalog/tproduct/11713447-101-bordovaya-roza-100-sm",
   "title": "101 бордовая роза 100 см",
