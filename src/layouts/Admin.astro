@@ -3,7 +3,7 @@
 import '../styles/admin.css';
 import { u } from '../lib/url';
 import { allProducts as products } from '../lib/catalog';
-interface Props { title: string; active: 'pages' | 'products' | 'leads' | 'metrika' | 'seo' | 'tochka' }
+interface Props { title: string; active: 'pages' | 'products' | 'leads' | 'metrika' | 'seo' | 'positions' | 'tochka' | 'recommendations' }
 const { title, active } = Astro.props;
 const site = new URL(u('/'), Astro.site).href;
 const tabs = [
@@ -12,7 +12,9 @@ const tabs = [
   ['leads', '/admin/leads/', 'Заявки', ''],
   ['metrika', '/admin/metrika/', 'Метрика', ''],
   ['seo', '/admin/seo/', 'SEO-аналитика', ''],
+  ['positions', '/admin/positions/', 'Позиции', ''], // закрыт замком (components/admin/Locked.astro), пока владелец не откроет
   ['tochka', '/admin/tochka-a/', 'Точка А', ''],
+  ['recommendations', '/admin/recommendations/', 'Рекомендации', ''], // закрыт замком
 ] as const;
 ---
 <!doctype html>
