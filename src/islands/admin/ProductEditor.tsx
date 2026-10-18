@@ -20,7 +20,6 @@ export default function ProductEditor({ product, parts, base, onClose, onSave, o
   const [files, setFiles] = useState<{ file: File; url: string }[]>([]);
   const [tab, setTab] = useState<(typeof TABS)[number]>('Основное');
   const isNew = !product.id;
-  useEffect(() => setP(product), [product]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', k);
