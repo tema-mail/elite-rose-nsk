@@ -20,12 +20,28 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # тесты замка админки (оба входа открывают, неверный – нет)
+      - run: npm test
       # Демо: подпапка репозитория, закрыто от индексации (своего домена у Elite Rose пока нет).
       - run: npm run build
         env:
           PUBLIC_BASE: /elite-rose-nsk
           PUBLIC_SITE_URL: https://tema-mail.github.io/elite-rose-nsk
           PUBLIC_NOINDEX: '1'
+      # весь личный кабинет – за логином и паролем; без секретов шаг падает и открытая админка не публикуется
+      - name: Закрыть админку логином и паролем
+        run: node scripts/lock-admin.mjs
+        env:
+          ADMIN_LOGIN: ${{ secrets.ADMIN_LOGIN }}
+          ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
+          # второй вход – СВЕРХ админ Артёма; нет секретов – один вход владельца и предупреждение
+          SVERH_LOGIN: ${{ secrets.SVERH_LOGIN }}
+          SVERH_PASS: ${{ secrets.SVERH_PASS }}
+      # под /admin/ не должно остаться открытых файлов с данными
+      - name: Проверить, что в админке нет открытых файлов
+        run: |
+          if find dist/admin -type f ! -name '*.html' | grep .; then echo 'в dist/admin есть незашифрованные файлы'; exit 1; fi
+          if grep -L 'id="lock-data"' -r dist/admin --include='*.html' | grep .; then echo 'страница админки без замка'; exit 1; fi
       - run: touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

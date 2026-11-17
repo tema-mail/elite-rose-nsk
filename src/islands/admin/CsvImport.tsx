@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import type { Product, Part } from '../../lib/catalog';
 
 // Окно «Импорт CSV» по образцу Тильды (Магазин → Импорт). Демо: файл читается только чтобы показать,
 // сколько строк в нём найдено; в каталог ничего не загружается.
@@ -18,7 +19,26 @@ export const CSV_COLUMNS = [
   ['Url', 'Адрес страницы (для обновления)', ''],
 ];
 
-export default function CsvImport({ base, onClose }: { base: string; onClose: () => void }) {
+// CSV собирается в браузере после входа: открытых файлов с данными под /admin/ нет (замок шифрует только страницы).
+const csvQ = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+const csvUri = (lines: string[]) => 'data:text/csv;charset=utf-8,' + encodeURIComponent('\ufeff' + lines.join('\r\n'));
+const CSV_HEAD = CSV_COLUMNS.map((c) => c[0]).join(';');
+const TEMPLATE_ROW = ['ER-0100', 'Розы;Большие букеты', 'Букет из 51 розы 60 см', 'Розы: белые, красные и розовые', 'Роза 60 см – 51 шт.; упаковка; лента', 'https://example.ru/photo-1.jpg https://example.ru/photo-2.jpg', '6500', '8650', '', '-25%', ''];
+const template = csvUri([CSV_HEAD, TEMPLATE_ROW.map((v) => `"${v}"`).join(';')]);
+
+/** Выгрузка товаров в формате магазина Тильды (разделитель «;», UTF-8 с BOM – открывается в Excel). site – адрес сайта без слэша в конце. */
+export function productsCsv(rows: Product[], parts: Part[], site: string) {
+  const names = new Map<string, string>();
+  const walk = (list: Part[]) => list.forEach((p) => { names.set(p.id, p.title); walk(p.children ?? []); });
+  walk(parts);
+  return csvUri([CSV_HEAD, ...rows.map((p, i) => [
+    `ER-${String(i + 1).padStart(4, '0')}`, p.parts.map((id) => names.get(id)).filter(Boolean).join(';'),
+    p.title, p.descr, p.text.replace(/<[^>]+>/g, ' ').trim(), p.images.map((im) => `${site}${im}-1000.webp`).join(' '),
+    p.price ?? '', p.priceOld ?? '', p.stock ?? '', p.mark, `${site}${p.path}`,
+  ].map(csvQ).join(';'))]);
+}
+
+export default function CsvImport({ exportHref, count, onClose }: { exportHref: string; count: number; onClose: () => void }) {
   const [file, setFile] = useState<{ name: string; rows: number } | null>(null);
   const [opts, setOpts] = useState({ csv: true, update: true, parts: true, photos: true, hide: false });
   const [done, setDone] = useState(false);
@@ -54,7 +74,7 @@ export default function CsvImport({ base, onClose }: { base: string; onClose: ()
                 {file ? <><b>{file.name}</b><span>Найдено строк с товарами: {file.rows}</span></> : <><b>Выберите CSV-файл</b><span>или перетащите его сюда · кодировка UTF-8, разделитель «;»</span></>}
               </label>
               <p class="muted" style="margin:8px 0 0;font-size:12.5px">
-                <a href={`${base}/admin/products-template.csv`} download>Скачать шаблон</a> · <a href={`${base}/admin/products.csv`} download>Выгрузить текущие товары</a> (53 шт.) – их можно поправить в Excel и загрузить обратно.
+                <a href={template} download="products-template.csv">Скачать шаблон</a> · <a href={exportHref} download="products.csv">Выгрузить текущие товары</a> ({count} шт.) – их можно поправить в Excel и загрузить обратно.
               </p>
             </li>
             <li>

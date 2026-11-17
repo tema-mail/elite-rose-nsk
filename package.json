@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "node scripts/prepare-images.mjs && astro build",
     "preview": "astro preview",
-    "data": "node scripts/import-vk.mjs"
+    "data": "node scripts/import-vk.mjs",
+    "test": "node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/preact": "^6.0.6",

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { Product, Part } from '../../lib/catalog';
 import ProductEditor, { type AdmProduct } from './ProductEditor';
-import CsvImport from './CsvImport';
+import CsvImport, { productsCsv } from './CsvImport';
 import GhConnect from './GhConnect';
 import { PARTS_PATH, PRODUCTS_PATH, UPLOADS_DIR, buildOf, commit, humanError, fileToBase64, getToken, readJson, slugify, type FileChange } from './gh';
 
@@ -67,6 +67,10 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
 
   const list = useMemo(() => raw.map(toAdm), [raw]);
   const title = (id: string) => parts.find((p) => p.id === id)?.title ?? id;
+  // адрес сайта известен только в браузере: ставим после гидратации, иначе в ссылке останется вариант сборки без домена
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(location.origin), []);
+  const csvHref = useMemo(() => productsCsv(raw, parts, origin + base), [raw, parts, origin, base]);
 
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -204,7 +208,7 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
               <option value="price-asc">Сначала дешевле</option><option value="price-desc">Сначала дороже</option>
             </select>
             <button class="btn" onClick={() => setCsv(true)}>⇪ Импорт CSV</button>
-            <a class="btn" href={`${base}/admin/products.csv`} download>⇩ Экспорт CSV</a>
+            <a class="btn" href={csvHref} download="products.csv">⇩ Экспорт CSV</a>
             <button class="btn primary" onClick={() => setEdit(blank())}>+ Добавить товар</button>
           </div>
 
@@ -245,7 +249,7 @@ export default function ProductsAdmin({ items, parts: initParts, base }: { items
       </div>
 
       {edit && <ProductEditor product={edit} parts={parts} base={base} onClose={() => setEdit(null)} onSave={save} onDelete={remove} />}
-      {csv && <CsvImport base={base} onClose={() => setCsv(false)} />}
+      {csv && <CsvImport exportHref={csvHref} count={raw.length} onClose={() => setCsv(false)} />}
       {showConnect && <GhConnect onClose={() => setShowConnect(false)} onConnected={(ok) => { setConnected(ok); setShowConnect(false); if (ok) reload(); }} />}
     </div>
   );
